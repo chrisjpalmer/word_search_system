@@ -25,14 +25,14 @@
 #   unused-packages = true
 
 
+[[constraint]]
+  name = "github.com/golang/protobuf"
+  revision = "347cf4a86c1cb8d262994d8ef5924d4576c5b331"
+
+[[constraint]]
+  name = "google.golang.org/grpc"
+  version = "1.18.0"
+
 [prune]
   go-tests = true
   unused-packages = true
-
-[[constraint]]
-  name = "github.com/stretchr/testify"
-  version = "1.3.0"
-
-[[constraint]]
-  name = "github.com/chrisjpalmer/word_search_system_grpc"
-  version = "1.0.1"

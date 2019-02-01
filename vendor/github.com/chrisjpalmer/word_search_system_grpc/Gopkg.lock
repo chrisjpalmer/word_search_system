@@ -2,22 +2,6 @@
 
 
 [[projects]]
-  digest = "1:0270a925a9a073e8218e82e17507200f2e645318de1fab659a2c87ddd321444d"
-  name = "github.com/chrisjpalmer/word_search_system_grpc"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "4e830b46d9dd350e22d17e0cff3b364210f9bb83"
-  version = "1.0.1"
-
-[[projects]]
-  digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
-  name = "github.com/davecgh/go-spew"
-  packages = ["spew"]
-  pruneopts = "UT"
-  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
-  version = "v1.1.1"
-
-[[projects]]
   digest = "1:3638dd58eb7a77bb1ed3f57e81f46ce636f0325f68e0900bb9170f71df93b9bc"
   name = "github.com/golang/protobuf"
   packages = [
@@ -29,30 +13,6 @@
   ]
   pruneopts = "UT"
   revision = "347cf4a86c1cb8d262994d8ef5924d4576c5b331"
-
-[[projects]]
-  digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
-  version = "v0.8.1"
-
-[[projects]]
-  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
-  name = "github.com/pmezard/go-difflib"
-  packages = ["difflib"]
-  pruneopts = "UT"
-  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
-  version = "v1.0.0"
-
-[[projects]]
-  digest = "1:972c2427413d41a1e06ca4897e8528e5a1622894050e2f527b38ddf0f343f759"
-  name = "github.com/stretchr/testify"
-  packages = ["assert"]
-  pruneopts = "UT"
-  revision = "ffdc059bfe9ce6a4e144ba849dbedead332c6053"
-  version = "v1.3.0"
 
 [[projects]]
   branch = "master"
@@ -152,9 +112,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/chrisjpalmer/word_search_system_grpc",
-    "github.com/pkg/errors",
-    "github.com/stretchr/testify/assert",
+    "github.com/golang/protobuf/proto",
     "google.golang.org/grpc",
   ]
   solver-name = "gps-cdcl"
