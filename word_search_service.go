@@ -7,42 +7,57 @@ import (
 	"github.com/pkg/errors"
 )
 
-type WordStat struct {
-	numberOfTimesSearched int64
-}
+//
+//HELPER STRUCTURES
+//
 
-type WordSearchService struct {
-	dictionaryWords     map[string]bool
-	dictionaryWordStats map[string]*WordStat
-}
-
-type WordInfo struct {
+//wordInfo - represents a word and any of its associated metadata
+type wordInfo struct {
 	word                  string
 	numberOfTimesSearched int64
 }
 
-type WordInfoSlice []WordInfo
+//wordInfoSlice - a slice of wordInfo struct
+type wordInfoSlice []wordInfo
 
-type AlphabeticalWordInfoSlice WordInfoSlice
+//alphabeticalWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words alphabetically
+type alphabeticalWordInfoSlice wordInfoSlice
 
-func (p AlphabeticalWordInfoSlice) Len() int { return len(p) }
-func (p AlphabeticalWordInfoSlice) Less(i, j int) bool {
+func (p alphabeticalWordInfoSlice) Len() int { return len(p) }
+func (p alphabeticalWordInfoSlice) Less(i, j int) bool {
 	return p[i].word < p[j].word
 }
-func (p AlphabeticalWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p alphabeticalWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
-type SearchFrequencyWordInfoSlice WordInfoSlice
+//searchFrequencyWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words by the frequecncy they were searched
+type searchFrequencyWordInfoSlice wordInfoSlice
 
-func (p SearchFrequencyWordInfoSlice) Len() int { return len(p) }
-func (p SearchFrequencyWordInfoSlice) Less(i, j int) bool {
+func (p searchFrequencyWordInfoSlice) Len() int { return len(p) }
+func (p searchFrequencyWordInfoSlice) Less(i, j int) bool {
 	return p[i].numberOfTimesSearched < p[j].numberOfTimesSearched
 }
-func (p SearchFrequencyWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p searchFrequencyWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
+//wordStat - metadata for a word
+type wordStat struct {
+	numberOfTimesSearched int64
+}
+
+//
+//WordSearchService
+//
+
+//WordSearchService - a service which allows words to be added and searched, as well as providing statistics on those words
+type WordSearchService struct {
+	dictionaryWords     map[string]bool
+	dictionaryWordStats map[string]*wordStat
+}
+
+//NewWordSearchService creates a new instance of WordSearchService
 func NewWordSearchService() *WordSearchService {
 	newWordSearchService := new(WordSearchService)
 	newWordSearchService.dictionaryWords = make(map[string]bool)
-	newWordSearchService.dictionaryWordStats = make(map[string]*WordStat)
+	newWordSearchService.dictionaryWordStats = make(map[string]*wordStat)
 	newWordSearchService.AddWords([]string{
 		"hello",
 		"goodbye",
@@ -70,7 +85,7 @@ func (wordSearchService *WordSearchService) SearchWord(word string) (exists bool
 //incrementNumberOfTimesSearched - increment the wordStat numberOfTimesSearched property for a given word
 func (wordSearchService *WordSearchService) incrementNumberOfTimesSearched(word string) {
 	if wordSearchService.dictionaryWordStats[word] == nil {
-		wordSearchService.dictionaryWordStats[word] = new(WordStat)
+		wordSearchService.dictionaryWordStats[word] = new(wordStat)
 	}
 	wordSearchService.dictionaryWordStats[word].numberOfTimesSearched++
 }
@@ -97,30 +112,30 @@ func (wordSearchService *WordSearchService) AddWords(words []string) (err error)
 //Top5Words - sort the words alphabetically and by order of search frequency, return the top 5
 func (wordSearchService *WordSearchService) Top5Words() []string {
 	//Extract all the words from the dictionary and put in an array
-	wordInfoSlice := make(WordInfoSlice, len(wordSearchService.dictionaryWords))
+	_wordInfoSlice := make(wordInfoSlice, len(wordSearchService.dictionaryWords))
 	i := 0
 	for word := range wordSearchService.dictionaryWords {
-		wordInfoSlice[i].word = word
+		_wordInfoSlice[i].word = word
 		if wordSearchService.dictionaryWordStats[word] != nil {
-			wordInfoSlice[i].numberOfTimesSearched = wordSearchService.dictionaryWordStats[word].numberOfTimesSearched
+			_wordInfoSlice[i].numberOfTimesSearched = wordSearchService.dictionaryWordStats[word].numberOfTimesSearched
 		}
 		i++
 	}
 
 	//Sort alphabetically
-	alphabeticalWordInfoSlice := AlphabeticalWordInfoSlice(wordInfoSlice)
-	sort.Sort(alphabeticalWordInfoSlice)
+	_alphabeticalWordInfoSlice := alphabeticalWordInfoSlice(_wordInfoSlice)
+	sort.Sort(_alphabeticalWordInfoSlice)
 
 	//Sort by search frequency
-	searchFrequencyWordInfoSlice := SearchFrequencyWordInfoSlice(alphabeticalWordInfoSlice)
-	sort.Sort(searchFrequencyWordInfoSlice)
+	_searchFrequencyWordInfoSlice := searchFrequencyWordInfoSlice(_alphabeticalWordInfoSlice)
+	sort.Sort(_searchFrequencyWordInfoSlice)
 
 	sliceMax := 5
-	if sliceMax > len(searchFrequencyWordInfoSlice) {
-		sliceMax = len(searchFrequencyWordInfoSlice)
+	if sliceMax > len(_searchFrequencyWordInfoSlice) {
+		sliceMax = len(_searchFrequencyWordInfoSlice)
 	}
 
-	top5WordInfoSlice := searchFrequencyWordInfoSlice[:sliceMax]
+	top5WordInfoSlice := _searchFrequencyWordInfoSlice[:sliceMax]
 
 	top5Words := make([]string, len(top5WordInfoSlice))
 	for i := range top5WordInfoSlice {
@@ -131,7 +146,6 @@ func (wordSearchService *WordSearchService) Top5Words() []string {
 }
 
 /**
-TODO: need to comment the above code nicely
 write unit tests for this struct
 
 */
