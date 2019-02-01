@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -20,7 +21,7 @@ type wordInfo struct {
 //wordInfoSlice - a slice of wordInfo struct
 type wordInfoSlice []wordInfo
 
-//alphabeticalWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words alphabetically
+//alphabeticalWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words that are alphabetically higher to the start of the slice
 type alphabeticalWordInfoSlice wordInfoSlice
 
 func (p alphabeticalWordInfoSlice) Len() int { return len(p) }
@@ -29,12 +30,12 @@ func (p alphabeticalWordInfoSlice) Less(i, j int) bool {
 }
 func (p alphabeticalWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
-//searchFrequencyWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words by the frequecncy they were searched
+//searchFrequencyWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words that are more frequently searched to the start of the slice
 type searchFrequencyWordInfoSlice wordInfoSlice
 
 func (p searchFrequencyWordInfoSlice) Len() int { return len(p) }
 func (p searchFrequencyWordInfoSlice) Less(i, j int) bool {
-	return p[i].numberOfTimesSearched < p[j].numberOfTimesSearched
+	return p[i].numberOfTimesSearched > p[j].numberOfTimesSearched
 }
 func (p searchFrequencyWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
@@ -65,20 +66,22 @@ func NewWordSearchService() *WordSearchService {
 		"search",
 		"filter",
 		"yes",
-		"no ",
+		"no",
 	})
 	return newWordSearchService
 }
 
 //SearchWord - return whether word exists or not
 func (wordSearchService *WordSearchService) SearchWord(word string) (exists bool) {
+	lowercaseWord := strings.ToLower(word)
+
 	//Check if the word does not exist
-	if wordSearchService.dictionaryWords[word] == false {
+	if wordSearchService.dictionaryWords[lowercaseWord] == false {
 		return false
 	}
 
 	//The word exists, record that it has been searched
-	wordSearchService.incrementNumberOfTimesSearched(word)
+	wordSearchService.incrementNumberOfTimesSearched(lowercaseWord)
 	return true
 }
 
@@ -92,21 +95,33 @@ func (wordSearchService *WordSearchService) incrementNumberOfTimesSearched(word 
 
 //AddWords - add words to the list
 func (wordSearchService *WordSearchService) AddWords(words []string) (err error) {
+	//Convert all words to lowercase before adding them
+	lowercaseWords := wordSearchService.wordsToLowercase(words)
+
 	//Validation... do any of the words exist already?
-	for i := range words {
-		word := words[i]
+	for i := range lowercaseWords {
+		word := lowercaseWords[i]
 		if wordSearchService.dictionaryWords[word] == true {
 			return errors.New(fmt.Sprintf("%s word already exists", word))
 		}
 	}
 
 	//Add each of these words to the words
-	for i := range words {
-		word := words[i]
+	for i := range lowercaseWords {
+		word := lowercaseWords[i]
 		wordSearchService.dictionaryWords[word] = true
 	}
 
 	return nil
+}
+
+//TODO: COMMENT
+func (wordSearchService *WordSearchService) wordsToLowercase(words []string) (lowercaseWords []string) {
+	_lowercaseWords := make([]string, len(words))
+	for i := range words {
+		_lowercaseWords[i] = strings.ToLower(words[i])
+	}
+	return _lowercaseWords
 }
 
 //Top5Words - sort the words alphabetically and by order of search frequency, return the top 5
