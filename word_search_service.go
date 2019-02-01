@@ -133,7 +133,7 @@ func (wordSearchService *WordSearchService) wordsToLowercase(words []string) (lo
 }
 
 //Top5SearchKeyWords - returns the top 5 most searched keywords
-func (wordSearchService *WordSearchService) Top5SearchKeyWords() []string {
+func (wordSearchService *WordSearchService) Top5SearchKeyWords() (keywords []string) {
 	//Clone the source slice
 	keyWordStats := append(wordSearchService.keyWordStats[:0:0], wordSearchService.keyWordStats...)
 
