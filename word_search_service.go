@@ -12,37 +12,32 @@ import (
 //HELPER STRUCTURES
 //
 
-//wordInfo - represents a word and any of its associated metadata
-type wordInfo struct {
+//keyWordStat - represents a word and any of its associated metadata
+type keyWordStat struct {
 	word                  string
 	numberOfTimesSearched int64
 }
 
-//wordInfoSlice - a slice of wordInfo struct
-type wordInfoSlice []wordInfo
+//keyWordStatSlice - a slice of keyWordStat struct
+type keyWordStatSlice []*keyWordStat
 
-//alphabeticalWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words that are alphabetically higher to the start of the slice
-type alphabeticalWordInfoSlice wordInfoSlice
+//alphabeticalKeyWordStatSlice - a keyWordStatSlice that can be passed to sort.Sort() to sort words that are alphabetically higher to the start of the slice
+type alphabeticalKeyWordStatSlice keyWordStatSlice
 
-func (p alphabeticalWordInfoSlice) Len() int { return len(p) }
-func (p alphabeticalWordInfoSlice) Less(i, j int) bool {
+func (p alphabeticalKeyWordStatSlice) Len() int { return len(p) }
+func (p alphabeticalKeyWordStatSlice) Less(i, j int) bool {
 	return p[i].word < p[j].word
 }
-func (p alphabeticalWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p alphabeticalKeyWordStatSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
-//searchFrequencyWordInfoSlice - a wordInfoSlice that can be passed to sort.Sort() to sort words that are more frequently searched to the start of the slice
-type searchFrequencyWordInfoSlice wordInfoSlice
+//searchFrequencyKeyWordStatSlice - a keyWordStatSlice that can be passed to sort.Sort() to sort words that are more frequently searched to the start of the slice
+type searchFrequencyKeyWordStatSlice keyWordStatSlice
 
-func (p searchFrequencyWordInfoSlice) Len() int { return len(p) }
-func (p searchFrequencyWordInfoSlice) Less(i, j int) bool {
+func (p searchFrequencyKeyWordStatSlice) Len() int { return len(p) }
+func (p searchFrequencyKeyWordStatSlice) Less(i, j int) bool {
 	return p[i].numberOfTimesSearched > p[j].numberOfTimesSearched
 }
-func (p searchFrequencyWordInfoSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
-
-//wordStat - metadata for a word
-type wordStat struct {
-	numberOfTimesSearched int64
-}
+func (p searchFrequencyKeyWordStatSlice) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 
 //
 //WordSearchService
@@ -50,15 +45,17 @@ type wordStat struct {
 
 //WordSearchService - a service which allows words to be added and searched, as well as providing statistics on those words
 type WordSearchService struct {
-	dictionaryWords     map[string]bool
-	dictionaryWordStats map[string]*wordStat
+	dictionaryWords map[string]bool
+	keyWordStatsMap map[string]*keyWordStat
+	keyWordStats    []*keyWordStat
 }
 
 //NewWordSearchService creates a new instance of WordSearchService
 func NewWordSearchService() *WordSearchService {
 	newWordSearchService := new(WordSearchService)
 	newWordSearchService.dictionaryWords = make(map[string]bool)
-	newWordSearchService.dictionaryWordStats = make(map[string]*wordStat)
+	newWordSearchService.keyWordStatsMap = make(map[string]*keyWordStat)
+	newWordSearchService.keyWordStats = make([]*keyWordStat, 0, 0)
 	newWordSearchService.AddWords([]string{
 		"hello",
 		"goodbye",
@@ -71,26 +68,37 @@ func NewWordSearchService() *WordSearchService {
 	return newWordSearchService
 }
 
-//SearchWord - return whether word exists or not
-func (wordSearchService *WordSearchService) SearchWord(word string) (exists bool) {
-	lowercaseWord := strings.ToLower(word)
+//SearchWord - returns possible matches for the keyword provided
+func (wordSearchService *WordSearchService) SearchWord(keyWord string) (matches []string) {
+	//convert the keyword to lowercase
+	lowercaseKeyWord := strings.ToLower(keyWord)
+
+	//record the the key word as being searches
+	wordSearchService.recordKeyWord(lowercaseKeyWord)
 
 	//Check if the word does not exist
-	if wordSearchService.dictionaryWords[lowercaseWord] == false {
-		return false
+	possibleMatches := make([]string, 0, len(wordSearchService.dictionaryWords))
+	for dictionaryWord := range wordSearchService.dictionaryWords {
+		if strings.Contains(dictionaryWord, lowercaseKeyWord) {
+			possibleMatches = append(possibleMatches, dictionaryWord)
+		}
 	}
 
-	//The word exists, record that it has been searched
-	wordSearchService.incrementNumberOfTimesSearched(lowercaseWord)
-	return true
+	//Order the matches alphabetically
+	sort.Strings(possibleMatches)
+
+	return possibleMatches
 }
 
-//incrementNumberOfTimesSearched - increment the wordStat numberOfTimesSearched property for a given word
-func (wordSearchService *WordSearchService) incrementNumberOfTimesSearched(word string) {
-	if wordSearchService.dictionaryWordStats[word] == nil {
-		wordSearchService.dictionaryWordStats[word] = new(wordStat)
+//recordKeyWord - increment the wordStat numberOfTimesSearched property for a given search keyword
+func (wordSearchService *WordSearchService) recordKeyWord(lowercaseKeyWord string) {
+	if wordSearchService.keyWordStatsMap[lowercaseKeyWord] == nil {
+		keyWordStat := new(keyWordStat)
+		keyWordStat.word = lowercaseKeyWord
+		wordSearchService.keyWordStatsMap[lowercaseKeyWord] = keyWordStat
+		wordSearchService.keyWordStats = append(wordSearchService.keyWordStats, keyWordStat)
 	}
-	wordSearchService.dictionaryWordStats[word].numberOfTimesSearched++
+	wordSearchService.keyWordStatsMap[lowercaseKeyWord].numberOfTimesSearched++
 }
 
 //AddWords - add words to the list
@@ -115,7 +123,7 @@ func (wordSearchService *WordSearchService) AddWords(words []string) (err error)
 	return nil
 }
 
-//TODO: COMMENT
+//wordsToLowercase - converts the []string to a lowercase []string
 func (wordSearchService *WordSearchService) wordsToLowercase(words []string) (lowercaseWords []string) {
 	_lowercaseWords := make([]string, len(words))
 	for i := range words {
@@ -124,43 +132,30 @@ func (wordSearchService *WordSearchService) wordsToLowercase(words []string) (lo
 	return _lowercaseWords
 }
 
-//Top5Words - sort the words alphabetically and by order of search frequency, return the top 5
-func (wordSearchService *WordSearchService) Top5Words() []string {
-	//Extract all the words from the dictionary and put in an array
-	_wordInfoSlice := make(wordInfoSlice, len(wordSearchService.dictionaryWords))
-	i := 0
-	for word := range wordSearchService.dictionaryWords {
-		_wordInfoSlice[i].word = word
-		if wordSearchService.dictionaryWordStats[word] != nil {
-			_wordInfoSlice[i].numberOfTimesSearched = wordSearchService.dictionaryWordStats[word].numberOfTimesSearched
-		}
-		i++
-	}
+//Top5SearchKeyWords - returns the top 5 most searched keywords
+func (wordSearchService *WordSearchService) Top5SearchKeyWords() []string {
+	//Clone the source slice
+	keyWordStats := append(wordSearchService.keyWordStats[:0:0], wordSearchService.keyWordStats...)
 
 	//Sort alphabetically
-	_alphabeticalWordInfoSlice := alphabeticalWordInfoSlice(_wordInfoSlice)
+	_alphabeticalWordInfoSlice := alphabeticalKeyWordStatSlice(keyWordStats)
 	sort.Sort(_alphabeticalWordInfoSlice)
 
 	//Sort by search frequency
-	_searchFrequencyWordInfoSlice := searchFrequencyWordInfoSlice(_alphabeticalWordInfoSlice)
+	_searchFrequencyWordInfoSlice := searchFrequencyKeyWordStatSlice(_alphabeticalWordInfoSlice)
 	sort.Sort(_searchFrequencyWordInfoSlice)
 
+	//Get first 5 words or less of the sorted words
 	sliceMax := 5
 	if sliceMax > len(_searchFrequencyWordInfoSlice) {
 		sliceMax = len(_searchFrequencyWordInfoSlice)
 	}
-
 	top5WordInfoSlice := _searchFrequencyWordInfoSlice[:sliceMax]
-
 	top5Words := make([]string, len(top5WordInfoSlice))
 	for i := range top5WordInfoSlice {
 		top5Words[i] = top5WordInfoSlice[i].word
 	}
 
+	//return the result
 	return top5Words
 }
-
-/**
-write unit tests for this struct
-
-*/
