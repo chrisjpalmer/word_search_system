@@ -5,12 +5,10 @@ import (
 	"log"
 	"net"
 
+	"flag"
+
 	wordsearchsystemgrpc "github.com/chrisjpalmer/word_search_system_grpc"
 	"google.golang.org/grpc"
-)
-
-const (
-	port = ":50051"
 )
 
 type wordSearchSystemServer struct {
@@ -42,11 +40,27 @@ func (_wordSearchSystemServer *wordSearchSystemServer) Top5SearchKeyWords(ctx co
 }
 
 func main() {
+	var (
+		err      error
+		config   *Config
+		listener net.Listener
+	)
+	//Get config
+	configPath := flag.String("config", "config.json", "/path/to/config.json")
+	flag.Parse()
+	config, err = ParseConfig(*configPath)
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	//Announce start
+	log.Println("WordSearchSystem has started")
+
 	//Create the word search service
 	wordSearchService := NewWordSearchService()
 
-	//Create the listener for the specific port
-	listener, err := net.Listen("tcp", port)
+	//Create the listener for the specific address
+	listener, err = net.Listen("tcp", config.ListenAddress)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
